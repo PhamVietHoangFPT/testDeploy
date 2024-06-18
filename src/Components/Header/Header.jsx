@@ -8,7 +8,7 @@ function Header() {
 					<img src="src/assets/img/diamondLogo.png" alt="" id='logoHeader' />
 				</div>
 				<div>
-					<h1 className='shopName'>DIAMOND OFFICIAL STORE</h1>
+					<h1 className='shopName'>DIAMOND OFFCIAL STORE</h1>
 				</div>
 				<div className='searchContainer'>
 					<form action="">
