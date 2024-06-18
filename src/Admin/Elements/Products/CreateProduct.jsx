@@ -11,7 +11,6 @@ import DeleteIcon from '@mui/icons-material/Delete'
 export default function CreateProduct(props) {
   const [image, setImage] = useState([])
   const [dataCategory, setDataCategory] = useState(null)
-
   useEffect(() => {
     // Define the Read function inside useEffect or make sure it's defined outside and doesn't change
     function Read() {
@@ -43,6 +42,7 @@ export default function CreateProduct(props) {
     whiteSpace: 'nowrap',
     width: 1,
   })
+
   const ITEM_HEIGHT = 120;
   const ITEM_PADDING_TOP = 8;
   const MenuProps = {
@@ -102,7 +102,11 @@ export default function CreateProduct(props) {
       "createProductPartDtos": [
         {
           "isMain": true,
-          "diamondId": values.diamondId
+          "diamondId": values.diamondIdMain
+        },
+        {
+          "isMain": false,
+          "diamondId": values.diamondIdExtra
         }
       ],
       "createProductSizeDtos": [
@@ -133,7 +137,11 @@ export default function CreateProduct(props) {
       .integer('Number must be an integer'),
     categoryId: Yup.number()
       .required('Category is required'),
-    diamondId: Yup.number()
+    diamondIdMain: Yup.number()
+      .required('Diamond ID is required')
+      .positive('Diamond ID must be positive')
+      .integer('Diamond ID must be an integer'),
+    diamondIdExtra: Yup.number()
       .required('Diamond ID is required')
       .positive('Diamond ID must be positive')
       .integer('Diamond ID must be an integer'),
@@ -157,7 +165,8 @@ export default function CreateProduct(props) {
       quantity: '',
       categoryId: '',
       warrantyDocumentsId: '',
-      diamondId: '',
+      diamondIdMain: '',
+      diamondIdExtra: '',
       size: '',
       price: '',
     },
@@ -167,7 +176,8 @@ export default function CreateProduct(props) {
         ...values,
         quantity: parseInt(values.quantity, 10),
         warrantyDocumentsId: parseInt(values.warrantyDocumentsId, 10),
-        diamondId: parseInt(values.diamondId, 10),
+        diamondIdMain: parseInt(values.diamondIdMain, 10),
+        diamondIdExtra: parseInt(values.diamondIdExtra, 10),
         size: parseFloat(values.size),
         price: parseFloat(values.price),
       };
@@ -316,17 +326,27 @@ export default function CreateProduct(props) {
               )}
             </div> <br />
             <div className='row'>
-              <h3 className='titleOfForm'>Product Properties</h3>
-              <div className='col-4'>
-                <TextField type="text" name='diamondId'
-                  value={formik.values.diamondId}
+              <div className='col-6'>
+                <TextField type="text" name='diamondIdMain'
+                  value={formik.values.diamondIdMain}
                   onChange={formik.handleChange}
-                  id="outlined-basic" label="Diamond ID"
+                  id="outlined-basic" label="Diamond ID Main"
                   variant="outlined" className='form-control' />
-                {formik.touched.diamondId && formik.errors.diamondId &&
-                  (<Alert severity="error">{formik.errors.diamondId}</Alert>)}
+                {formik.touched.diamondIdMain && formik.errors.diamondIdMain &&
+                  (<Alert severity="error">{formik.errors.diamondIdMain}</Alert>)}
               </div>
-              <div className='col-4'>
+              <div className='col-6'>
+                <TextField type="text" name='diamondIdExtra'
+                  value={formik.values.diamondIdExtra}
+                  onChange={formik.handleChange}
+                  id="outlined-basic" label="Diamond ID Extra"
+                  variant="outlined" className='form-control' />
+                {formik.touched.diamondIdExtra && formik.errors.diamondIdExtra &&
+                  (<Alert severity="error">{formik.errors.diamondIdExtra}</Alert>)}
+              </div>
+            </div> <br />
+            <div className='row'>
+              <div className='col-6'>
                 <TextField type="text" name='size'
                   value={formik.values.size}
                   onChange={formik.handleChange}
@@ -335,7 +355,7 @@ export default function CreateProduct(props) {
                 {formik.touched.size && formik.errors.size &&
                   (<Alert severity="error">{formik.errors.size}</Alert>)}
               </div>
-              <div className='col-4'>
+              <div className='col-6'>
                 <TextField type="text" name='price'
                   value={formik.values.price}
                   onChange={formik.handleChange}
