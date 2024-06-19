@@ -22,7 +22,6 @@ pipeline {
         bat 'vercel --prod --yes --token=%VERCEL_TOKEN% --name=phamviethoangfpts-projects --force'
       }
   }
-      stages {
         stage('Example') {
             steps {
                 gerritReview labels: [Verified: 0]
@@ -30,7 +29,7 @@ pipeline {
                 gerritComment path:'https://github.com/PhamVietHoangFPT/testDeploy/edit/main/Jenkinsfile', line: 30, message: 'Hello'
             }
         }
-    }
+  }
     post {
         success {
             gerritReview labels: [Verified: 1]
@@ -42,5 +41,4 @@ pipeline {
             gerritCheck checks: ['example:checker': 'FAILED'], message: 'invalid syntax'
         }
     }
-  }
 }
