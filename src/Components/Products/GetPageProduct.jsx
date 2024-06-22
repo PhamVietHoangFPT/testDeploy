@@ -2,7 +2,8 @@ import { Box, Grid, Container } from '@mui/material'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import React, { useEffect, useState, setParams } from 'react'
-import { Stack, Pagination, TextField } from '@mui/material'
+import { Stack, Pagination, TextField, CardMedia } from '@mui/material'
+import { Link } from 'react-router-dom'
 export default function GetPageProduct() {
   const [PageNumber, setPageNumber] = useState(1)
   const [PageSize, setPageSize] = useState(12)
@@ -14,8 +15,12 @@ export default function GetPageProduct() {
     queryDTO: {
       PageNumber: PageNumber,
       PageSize: PageSize,
-      OrderByDesc: OrderByDesc
+      ...(OrderByDesc !== null && { OrderByDesc: OrderByDesc }),
     },
+  }
+
+  function calculatePrice(price1, price2) {
+    return price1 + price2
   }
 
 
@@ -68,39 +73,58 @@ export default function GetPageProduct() {
       }}>
         <Box sx={{
         }}>
-          <Grid container columnSpacing={3} sx={{ width: '80vw', }}>
+          <Grid container columnSpacing={9} rowSpacing={6} sx={{ width: '80vw' }} columns={{ xs: 12, sm: 8, md: 12 }}>
             {data && data.map((item, index) =>
               item.isDeleted ? null : (
-                <Grid item xs={3}>
-                  <Card key={index} sx={{
-                    width: 'auto',
-                    margin: '50px',
-                  }} >
-                    <CardContent>
-                      {item.images && item.images[0] && item.images[0].urlPath ? (
-                        <img src={item.images[0].urlPath} alt={item.name} style={{
-                          width: '100%',
-                        }} />
-                      ) : null}
-                      <h3>{item.name}</h3>
-                      <p>{item.productPart}</p>
-                      <p>{item.productSize}</p>
-                      <p>{item.quantity}</p>
-                      <p>{item.warrantyDocuments.termsAndConditions}</p>
-                    </CardContent>
-                  </Card>
+                <Grid item xs={12} sm={4} md={3} key={index} sx={{
+                  width: '15vw',
+                }} >
+                  <Link to={`/ring/detail/${item.id}`}>
+                    <Card>
+                      <CardContent>
+                        {item.images && item.images[0] && item.images[0].urlPath ? (
+                          <>
+                            <CardMedia
+                              component="img"
+                              image={item.images[0].urlPath}
+                              alt="Paella dish"
+                              sx={{
+                                width: '100%',
+                              }}
+                            />
+                          </>
+
+                        ) : null}
+                        <p style={{
+                          textAlign: 'center',
+                          fontSize: '1vw',
+                        }}>
+                          {item.name}
+                        </p>
+                        <p
+                          style={{
+                            textAlign: 'center',
+                            fontSize: '1vw',
+                          }}>
+                          {item.productParts && item.productParts.length > 1
+                            && calculatePrice(item.productParts[0].diamond?.price, item.productParts[1].diamond?.price)}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </Grid>
               )
             )}
           </Grid>
         </Box>
-      </Container>
+      </Container><br />
       <Stack sx={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+
       }}>
-        <Pagination count={TotalPage} page={PageNumber} onChange={handlePageChange} />
+        <Pagination count={TotalPage} page={PageNumber} onChange={handlePageChange} size="large" />
       </Stack>
     </div>
   )
