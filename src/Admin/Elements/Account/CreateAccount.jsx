@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Button, Modal, Box, TextField, Select, InputLabel, MenuItem, OutlinedInput, FormControl } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import CancelScheduleSendIcon from '@mui/icons-material/CancelScheduleSend'
+import { createApi } from '../../../Auth/AuthFunction'
 export default function CreateAccount(props) {
 	const [nameAccount, setnameAccount] = useState('')
 	const [emailAccount, setEmailAccount] = useState('')
@@ -26,7 +27,6 @@ export default function CreateAccount(props) {
 	}
 	const handleSubmit = (event) => {
 		event.preventDefault()
-		// Gọi hàm CreateCaratWeight, truyền weight và price như là các đối số
 		CreateAccount(emailAccount, passwordAccount, nameAccount, addressAccount, genderAccount, passwordAccount, roleAccount)
 		setnameAccount('')
 		setEmailAccount('')
@@ -50,7 +50,7 @@ export default function CreateAccount(props) {
 	}
 
 	function CreateAccount(Email, Password, Name, Address, Gender, Phone, Role) {
-		const url = 'https://localhost:7122/api/Account/CreateUser'
+		const url = createApi('Account/CreateUser')
 		const data = {
 			name: Name,
 			email: Email,

@@ -1,14 +1,16 @@
 import { Box, Grid, Container } from '@mui/material'
-import Card from '@mui/material/Card'
-import CardContent from '@mui/material/CardContent'
-import React, { useEffect, useState, setParams } from 'react'
-import { Stack, Pagination, TextField } from '@mui/material'
+import { Outlet, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react'
+import { Stack, Pagination, Button } from '@mui/material'
 import { Table, TableBody, TableContainer, TableHead, ImageList, TableRow, ImageListItem, styled } from '@mui/material'
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import ButtonDeleteProduct from './ButtonDeleteProduct'
-import UpdateProduct from './UpdateProduct'
+import { useNavigate } from 'react-router-dom'
 import ShowDetails from './ShowDetails'
+import CreateProduct from './CreateProduct'
 import "swiffy-slider/css"
+import UpdateProduct from './UpdateProduct';
+import { createApi } from '../../../Auth/AuthFunction';
 export default function ShowAllProduct() {
   const [PageNumber, setPageNumber] = useState(1)
   const [PageSize, setPageSize] = useState(4)
@@ -16,6 +18,15 @@ export default function ShowAllProduct() {
   const [TotalPage, setTotalPage] = useState(null)
   const [data, setData] = useState(null)
   const [triggerRead, setTriggerRead] = useState(false)
+  const navigate = useNavigate()
+  const role = localStorage.getItem('role')
+
+  useEffect(() => {
+    if (role !== '1') {
+      navigate('/admin')
+    }
+  })
+
   const params = {
     queryDTO: {
       PageNumber: PageNumber,
@@ -35,7 +46,8 @@ export default function ShowAllProduct() {
       Object.entries(params.queryDTO).forEach(([key, value]) => {
         queryString.append(`queryDTO.${key}`, value)
       })
-      fetch(`https://localhost:7122/api/Product/GetPagedProducts?${queryString.toString()}`)
+      const url = createApi(`Product/GetPagedProducts?${queryString.toString()}`)
+      fetch(url)
         .then(response => response.json())
         // .then(response => response.json())
         .then(data => {
@@ -66,10 +78,37 @@ export default function ShowAllProduct() {
       justifyContent: 'flex-end'
     }}>
 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        marginRight: '10vw',
+        marginTop: '2vh'
+      }}>
+        <CreateProduct onProductCreated={() => setTriggerRead(prev => !prev)}></CreateProduct>
+
+        <Button
+          variant="contained"
+          type="button"
+          size="large"
+          onClick={() => setTriggerRead(prev => !prev)}
+          sx={{
+            backgroundColor: '#4d5b6b',
+            color: '#f2f2f2',
+            marginLeft: '1vw',
+            '&:hover': {
+              backgroundColor: '#4d5b6b',
+              color: '#f2f2f2',
+            }
+          }}>
+          REFRESH
+        </Button>
+      </div>
+
       <Container sx={{
         display: 'flex',
         alignItems: 'center',
       }}>
+
         <Box>
           <TableContainer>
             <Table sx={{
@@ -107,11 +146,9 @@ export default function ShowAllProduct() {
                       </StyledTableCell>
                       <StyledTableCell>{item.name}</StyledTableCell>
                       <StyledTableCell><ButtonDeleteProduct id={item.id} isDeleted={item.isDeleted} /></StyledTableCell>
-                      <StyledTableCell><UpdateProduct item={item} image={item.images}></UpdateProduct></StyledTableCell>
-                      {console.log(item.id)}
-                      <StyledTableCell><ShowDetails></ShowDetails></StyledTableCell>
+                      <StyledTableCell><UpdateProduct item={item} image={item.images} onProductUpdated={() => setTriggerRead(prev => !prev)}></UpdateProduct></StyledTableCell>
+                      <StyledTableCell><ShowDetails id={item.id}></ShowDetails></StyledTableCell>
                     </TableRow>
-
                   </>
                 ))
                 }
