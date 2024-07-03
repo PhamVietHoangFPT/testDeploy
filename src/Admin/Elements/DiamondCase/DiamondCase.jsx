@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react'
+import CRUDDiamondCase from './CRUDDiamondCase'
 import { useNavigate } from 'react-router-dom'
-import CRUDCategory from './CRUDCategory'
 
-export default function Category() {
-	const role = localStorage.getItem('role')
+export default function DiamondCase() {
 	const navigate = useNavigate()
+	const role = localStorage.getItem('role')
 
 	useEffect(() => {
 		if (role !== '1') {
@@ -15,10 +15,10 @@ export default function Category() {
 		<div className='contentAdminContainer'>
 			<div className='CRUDContainer '>
 				<div className='titleOfFormContainer'>
-					<h2>Category</h2>
+					<h2>Diamond Case</h2>
 				</div>
 				<div className='buttonContainer'>
-					<CRUDCategory></CRUDCategory>
+					<CRUDDiamondCase></CRUDDiamondCase>
 				</div>
 			</div>
 		</div>

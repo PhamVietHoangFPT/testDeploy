@@ -2,16 +2,15 @@ import React, { useState } from 'react'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Switch from '@mui/material/Switch'
 import { createApi } from '../../../Auth/AuthFunction'
-export default function ButtonDeleteCategory(props) {
+export default function ButtonDeleteDiamondCase(props) {
   const [isDeleted, setIsDeleted] = useState(props.isDeleted)
   const handleChange = (event) => {
     setIsDeleted(event.target.checked)
-    DeleteCategory(props.id, event.target.checked ? 1 : 0)
+    DeleteDiamondCase(props.id, event.target.checked ? 1 : 0)
   }
 
-  function DeleteCategory(id, status) {
-    const url = createApi(`Category/DeleteOrEnable/${id}/${status}`)
-    console.log(url)
+  function DeleteDiamondCase(id, status) {
+    const url = createApi(`DiamondCase/DeleteOrEnable/${id}/${status}`)
     fetch(url, {
       method: 'PUT',
       headers: {

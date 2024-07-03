@@ -3,25 +3,34 @@ import { Form, Formik, Field, ErrorMessage, FieldArray } from 'formik'
 import { RadioGroup, FormControlLabel, Radio } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import * as Yup from 'yup'
-import { TextField, Button, Box, Grid, FormControl, InputLabel, Select, MenuItem, Card, CardContent, Alert, Modal } from '@mui/material'
+import { TextField, Button, Box, FormControl, InputLabel, Select, MenuItem, Card, CardContent, Alert, Modal } from '@mui/material'
 import SendIcon from '@mui/icons-material/Send'
 import CancelScheduleSendIcon from '@mui/icons-material/CancelScheduleSend'
 import { styled } from '@mui/material/styles'
 import FileUploadIcon from '@mui/icons-material/FileUpload'
 import DeleteIcon from '@mui/icons-material/Delete'
+import { createApi } from '../../../Auth/AuthFunction'
 
 export default function UpdateProduct(props) {
   const [image, setImage] = useState([])
   const [dataCategory, setDataCategory] = useState(null)
+  const [dataDiamondCase, setDataDiamondCase] = useState(null)
   const [dataDiamond, setDataDiamond] = useState(null)
+  const [dataCollection, setDataCollection] = useState(null)
   const [open, setOpen] = useState(false)
   const [displayStatus, setDisplayStatus] = useState(false)
   const [responseCodeProduct, setResponseCodeProduct] = useState(null)
   const [responseCodeProductDetail, setResponseCodeProductDetail] = useState(null)
+  const [priceMainPart, setPriceMainPart] = useState(props.item.productParts[0]?.diamond?.price)
+  const [priceExtraPart, setPriceExtraPart] = useState(props.item.productParts[1]?.diamond?.price)
+  const calculatePrice = (priceMain, priceExtra, priceSize) => {
+    return priceMain + priceExtra + priceSize
+  }
   const handleOpen = () => setOpen(true)
   const handleClose = () => {
     setOpen(false)
     setDisplayStatus(false)
+    props.onProductUpdated()
   }
   const item = props.item
 
@@ -31,7 +40,7 @@ export default function UpdateProduct(props) {
   useEffect(() => {
     // Define the Read function inside useEffect or make sure it's defined outside and doesn't change
     function Read() {
-      const url = 'https://localhost:7122/api/Category/GetAllCategories'
+      const url = createApi('Category/GetAllCategories')
       fetch(url, {
         method: 'GET',
         headers: {
@@ -49,7 +58,8 @@ export default function UpdateProduct(props) {
 
   useEffect(() => {
     function getDiamondData() {
-      fetch(`https://localhost:7122/api/Diamond/GetPagedDiamonds?QueryDTO.PageSize=1000`)
+      const url = createApi('Diamond/GetPagedDiamonds?QueryDTO.PageSize=10000')
+      fetch(url)
         .then(response => response.json())
         .then(data => {
           setDataDiamond(data.items)
@@ -59,6 +69,36 @@ export default function UpdateProduct(props) {
         })
     }
     getDiamondData()
+  }, [])
+
+  useEffect(() => {
+    function getDiamondCaseData() {
+      const url = createApi('DiamondCase/GetAllDiamondCases')
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          setDataDiamondCase(data)
+        })
+        .catch(error => {
+          console.error(error)
+        })
+    } getDiamondCaseData
+    getDiamondCaseData()
+  }, [])
+
+  useEffect(() => {
+    function getCollectionData() {
+      const url = createApi('Collection/GetAllCollections')
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          setDataCollection(data)
+        })
+        .catch(error => {
+          console.error(error)
+        })
+    }
+    getCollectionData()
   }, [])
 
   const VisuallyHiddenInput = styled('input')({
@@ -97,15 +137,14 @@ export default function UpdateProduct(props) {
   }
 
   function Update(values) {
-    const url = 'https://localhost:7122/api/Product/UpdateProduct/' + item.id
-    console.log(values)
+    const url = createApi(`Product/UpdateProduct/${item.id}`)
     const formData = new FormData()
     formData.append('Name', values.nameProduct)
     formData.append('Gender', values.gender)
     formData.append('Quantity', values.quantity)
     formData.append('CategoryId', values.categoryId)
-    formData.append('WarrantyDocumentsId', values.warrantyDocumentsId)
-
+    formData.append('DiamondCaseId', values.DiamondCaseId)
+    formData.append('CollectionId', values.CollectionId)
 
     // Lặp qua mỗi file và thêm vào FormData
     for (let i = 0; i < image.length; i++) {
@@ -125,7 +164,7 @@ export default function UpdateProduct(props) {
       setResponseCodeProduct(response.status)
     })
 
-    const urlCreateProductProperties = 'https://localhost:7122/api/Product/UpdateProductProperties/' + item.id
+    const urlCreateProductProperties = createApi(`Product/UpdateProductProperties/${item.id}`)
     const productProperties = {
       "createProductPartDtos": values.diamonds,
       "createProductSizeDtos": values.sizes
@@ -148,7 +187,7 @@ export default function UpdateProduct(props) {
       .required('Product name is required'),
     gender: Yup.bool()
       .required('Gender is required'),
-    quantity: Yup.number('Input must be number')
+    CollectionId: Yup.number('Input must be number')
       .required('Quantity is required')
       .positive('Number must not negative')
       .integer('Number must be an integer'),
@@ -164,20 +203,18 @@ export default function UpdateProduct(props) {
           .required('Type is required'),
       })
     ),
-    warrantyDocumentsId: Yup.number()
-      .required('Warranty ID is required')
-      .positive('Warranty ID must be positive')
-      .integer('Warranty ID must be an integer'),
+    DiamondCaseId: Yup.number()
+      .required('Diamond is required'),
     sizes: Yup.array().of(
       Yup.object().shape({
         size: Yup.number()
           .required('Size is required')
           .positive('Size must be positive')
           .integer('Size must be an integer'),
-        price: Yup.number()
-          .required('Price is required')
-          .positive('Price must be positive')
-          .integer('Price must be an integer'),
+        quantity: Yup.number()
+          .required('Quantity is required')
+          .positive('Quantity must be positive')
+          .integer('Quantity must be an integer'),
       })
     ),
   })
@@ -185,16 +222,17 @@ export default function UpdateProduct(props) {
   const initialValues = {
     nameProduct: item.name,
     gender: item.gender,
-    quantity: item.quantity,
+    CollectionId: item.collection.id,
     categoryId: item.category.id,
-    warrantyDocumentsId: item.warrantyDocuments.id,
-    diamonds: item.productParts.map(partItem => ({
-      diamondId: partItem.diamond.id,
-      isMain: partItem.isMain,
+    DiamondCaseId: item.diamondCase.id,
+    diamonds: item.productParts?.map(partItem => ({
+      diamondId: partItem?.diamond?.id,
+      isMain: partItem?.isMain,
     })),
-    sizes: item.productSizes.map(sizeItem => ({
+    sizes: item.productSizes?.map(sizeItem => ({
       size: sizeItem.size,
       price: sizeItem.price,
+      quantity: sizeItem.quantity
     })),
   }
 
@@ -202,15 +240,16 @@ export default function UpdateProduct(props) {
 
     const parsedValues = {
       ...values,
-      quantity: parseInt(values.quantity, 10),
-      warrantyDocumentsId: parseInt(values.warrantyDocumentsId, 10),
+      CollectionId: parseInt(values.CollectionId, 10),
+      DiamondCaseId: parseInt(values.DiamondCaseId, 10),
       diamonds: values.diamonds ? values.diamonds.map(diamond => ({
         diamondId: parseInt(diamond.diamondId, 10),
         isMain: diamond.isMain
       })) : [],
       sizes: values.sizes ? values.sizes.map(size => ({
         size: parseFloat(size.size),
-        price: parseFloat(size.price)
+        price: parseFloat(size.price),
+        quantity: parseInt(size.quantity, 10)
       })) : []
     }
     Update(parsedValues)
@@ -236,7 +275,6 @@ export default function UpdateProduct(props) {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: '-webkit-fill-available',
           bgcolor: 'background.paper',
           p: 4,
           overflow: 'auto',
@@ -283,15 +321,21 @@ export default function UpdateProduct(props) {
                     </ErrorMessage>
                   </div>
                   <div className='col-3'>
-                    <Field
-                      name="quantity"
-                      as={TextField}
-                      label="Quantity"
-                      onChange={handleChange}
-                      value={values.quantity}
-                      sx={{ width: '100%' }}
-                    />
-                    <ErrorMessage name="quantity">
+                    <FormControl fullWidth>
+                      <InputLabel>Collection</InputLabel>
+                      <Field
+                        name="CollectionId"
+                        as={Select}
+                        label="Collection"
+                        onChange={handleChange}
+                        value={values.CollectionId}
+                      >
+                        {dataCollection && dataCollection.map((item) => (
+                          <MenuItem value={item.id} key={item.id}>{item.name}</MenuItem>
+                        ))}
+                      </Field>
+                    </FormControl>
+                    <ErrorMessage name="CollectionId">
                       {msg => <Alert severity="error">{msg}</Alert>}
                     </ErrorMessage>
                   </div>
@@ -317,15 +361,21 @@ export default function UpdateProduct(props) {
                     </FormControl>
                   </div>
                   <div className='col-3'>
-                    <Field
-                      name="warrantyDocumentsId"
-                      as={TextField}
-                      label="Warranty documents"
-                      onChange={handleChange}
-                      value={values.warrantyDocumentsId}
-                      sx={{ width: '100%' }}
-                    />
-                    <ErrorMessage name="warrantyDocumentsId">
+                    <FormControl fullWidth>
+                      <InputLabel>Diamond Case</InputLabel>
+                      <Field
+                        name="DiamondCaseId"
+                        as={Select}
+                        label="Diamond Case"
+                        onChange={handleChange}
+                        value={values.DiamondCaseId}
+                      >
+                        {dataDiamondCase && dataDiamondCase.map((item) => (
+                          <MenuItem value={item.id} key={item.id}>{item.name}</MenuItem>
+                        ))}
+                      </Field>
+                    </FormControl>
+                    <ErrorMessage name="DiamondCaseId">
                       {msg => <Alert severity="error" sx={{ width: '100%' }}>{msg}</Alert>}
                     </ErrorMessage>
                   </div>
@@ -389,77 +439,121 @@ export default function UpdateProduct(props) {
                   )}
                 </div > <br />
 
-                <div className='row' >
+                <div className='row'>
                   <div className='col-12'>
                     <FieldArray name="diamonds">
-                      {({ push, remove, form }) => (
+                      {({ form }) => (
                         <div>
-                          {form.values.diamonds.map((_, index) => (
-                            <>
-                              <div key={index} className='row' style={{
-                                marginBottom: '10px',
-                              }}>
-                                <div className='col-4'>
-                                  <FormControl fullWidth>
-                                    <InputLabel>Diamond</InputLabel>
-                                    <Field
-                                      name={`diamonds[${index}].diamondId`}
-                                      as={Select}
-                                      label="Diamond"
-                                      onChange={form.handleChange}
-                                      value={form.values.diamonds[index].diamondId}
-                                      MenuProps={MenuProps}
+                          <div className='row'>
+                            <div className='col-4'>
+                              <FormControl fullWidth>
+                                <InputLabel>Diamond</InputLabel>
+                                <Field
+                                  name={`diamonds[0].diamondId`}
+                                  as={Select}
+                                  label="Diamond"
+                                  onChange={form.handleChange}
+                                  value={form.values.diamonds[0]?.diamondId}
+                                  MenuProps={MenuProps}
+                                >
+                                  {dataDiamond && dataDiamond.map((item) => (
+                                    <MenuItem
+                                      value={item.id}
+                                      key={item.id}
+                                      onClick={() => { setPriceMainPart(item.price) }}
                                     >
-                                      {dataDiamond && dataDiamond.map((item) => (
-                                        <MenuItem value={item.id} key={item.id}>{item.name}</MenuItem>
-                                      ))}
-                                    </Field>
-                                  </FormControl>
-                                  <ErrorMessage name={`diamonds[${index}].diamondId`}>
-                                    {msg => <Alert severity="error">{msg}</Alert>}
-                                  </ErrorMessage>
-                                </div>
+                                      {item.name}
+                                    </MenuItem>
+                                  ))}
 
-                                <div className='col-2'>
-                                  <Field
-                                    name={`diamonds[${index}].isMain`}
-                                    as={RadioGroup}
-                                    label="isMain"
-                                    onChange={form.handleChange}
-                                    value={form.values.diamonds[index].isMain}
-                                    sx={{
-                                      display: 'flex',
-                                      flexDirection: 'row',
-                                      'flex-wrap': 'nowrap'
-                                    }}
-                                  >
-                                    <FormControlLabel value="true" control={<Radio />} label="Main" />
-                                    <FormControlLabel value="false" control={<Radio />} label="Extra" />
-                                  </Field>
-                                  <ErrorMessage name={`diamonds[${index}].isMain`}>
-                                    {msg => <Alert severity="error">{msg}</Alert>}
-                                  </ErrorMessage>
-                                </div><br />
-                                <div className='col'>
-                                  <Button
-                                    variant="contained"
-                                    color="error"
-                                    onClick={() => remove(index)}
-                                    style={{ marginTop: '10px' }}
-                                  >
-                                    Remove
-                                  </Button>
-                                </div>
-                              </div>
-                            </>
-                          ))}
-                          <Button
-                            variant="contained"
-                            onClick={() => push({ diamondId: '', isMain: '' })}
-                            style={{ marginTop: '10px' }}
-                          >
-                            Add Diamond
-                          </Button>
+                                </Field>
+                              </FormControl>
+                              <ErrorMessage name={`diamonds[0].diamondId`}>
+                                {msg => <Alert severity="error">{msg}</Alert>}
+                              </ErrorMessage>
+                            </div>
+
+                            <div className='col-2'>
+                              <Field
+                                name={`diamonds[0].isMain`}
+                                as={RadioGroup}
+                                label="isMain"
+                                onChange={form.handleChange}
+                                value={true}
+                                sx={{
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  'flex-wrap': 'nowrap'
+                                }}
+                                readOnly={true}
+                              >
+                                <FormControlLabel value="true" control={<Radio />} label="Main" />
+                                <FormControlLabel value="false" control={<Radio />} label="Extra" />
+                              </Field>
+                              <ErrorMessage name={`diamonds[0].isMain`}>
+                                {msg => <Alert severity="error">{msg}</Alert>}
+                              </ErrorMessage>
+                            </div><br />
+                          </div>
+                        </div>
+                      )}
+                    </FieldArray>
+                  </div> <br />
+                  <div className='col-12'>
+                    <FieldArray name="diamonds">
+                      {({ form }) => (
+                        <div>
+                          <div className='row'>
+                            <div className='col-4'>
+                              <FormControl fullWidth>
+                                <InputLabel>Diamond</InputLabel>
+                                <Field
+                                  name={`diamonds[1].diamondId`}
+                                  as={Select}
+                                  label="Diamond"
+                                  onChange={form.handleChange}
+                                  value={form.values.diamonds[1]?.diamondId}
+                                  MenuProps={MenuProps}
+                                >
+                                  {dataDiamond && dataDiamond.map((item) => (
+                                    <MenuItem
+                                      value={item.id}
+                                      key={item.id}
+                                      onClick={() => { setPriceExtraPart(item.price) }}
+                                    >
+                                      {item.name}
+                                    </MenuItem>
+                                  ))}
+
+                                </Field>
+                              </FormControl>
+                              <ErrorMessage name={`diamonds[1].diamondId`}>
+                                {msg => <Alert severity="error">{msg}</Alert>}
+                              </ErrorMessage>
+                            </div>
+
+                            <div className='col-2'>
+                              <Field
+                                name={`diamonds[1].isMain`}
+                                as={RadioGroup}
+                                label="isMain"
+                                onChange={form.handleChange}
+                                value={false}
+                                sx={{
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  'flex-wrap': 'nowrap'
+                                }}
+                                readOnly={true}
+                              >
+                                <FormControlLabel value="true" control={<Radio />} label="Main" />
+                                <FormControlLabel value="false" control={<Radio />} label="Extra" />
+                              </Field>
+                              <ErrorMessage name={`diamonds[1].isMain`}>
+                                {msg => <Alert severity="error">{msg}</Alert>}
+                              </ErrorMessage>
+                            </div><br />
+                          </div>
                         </div>
                       )}
                     </FieldArray>
@@ -493,14 +587,27 @@ export default function UpdateProduct(props) {
                                     name={`sizes[${index}].price`}
                                     as={TextField}
                                     label="Price"
-                                    onChange={form.handleChange}
-                                    value={form.values.sizes[index].price}
+                                    value={form.values.sizes[index].price = calculatePrice(priceMainPart, priceExtraPart, form.values.sizes[index].size * 100)}
                                     style={{ width: '100%' }}
+                                    onChange={form.handleChange}
+                                    readOnly={true}
                                   />
-                                  <ErrorMessage name={`sizes[${index}].price`}>
+                                </div><br />
+                                <div className='col-2'>
+                                  <FormControl fullWidth>
+                                    <Field
+                                      name={`sizes[${index}].quantity`}
+                                      as={TextField}
+                                      label="Quantity"
+                                      onChange={form.handleChange}
+                                      value={form.values.sizes[index].quantity}
+
+                                    />
+                                  </FormControl>
+                                  <ErrorMessage name={`sizes[${index}].quantity`}>
                                     {msg => <Alert severity="error">{msg}</Alert>}
                                   </ErrorMessage>
-                                </div><br />
+                                </div>
                                 <div className='col'>
                                   <Button
                                     variant="contained"
@@ -516,7 +623,7 @@ export default function UpdateProduct(props) {
                           ))}
                           <Button
                             variant="contained"
-                            onClick={() => push({ size: '', price: '' })}
+                            onClick={() => push({ size: '', price: '', quantity: '' })}
                             style={{ marginTop: '10px' }}
                           >
                             Add Size

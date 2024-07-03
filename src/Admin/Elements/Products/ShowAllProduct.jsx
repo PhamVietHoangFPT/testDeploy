@@ -10,6 +10,7 @@ import ShowDetails from './ShowDetails'
 import CreateProduct from './CreateProduct'
 import "swiffy-slider/css"
 import UpdateProduct from './UpdateProduct';
+import { createApi } from '../../../Auth/AuthFunction';
 export default function ShowAllProduct() {
   const [PageNumber, setPageNumber] = useState(1)
   const [PageSize, setPageSize] = useState(4)
@@ -18,6 +19,14 @@ export default function ShowAllProduct() {
   const [data, setData] = useState(null)
   const [triggerRead, setTriggerRead] = useState(false)
   const navigate = useNavigate()
+  const role = localStorage.getItem('role')
+
+  useEffect(() => {
+    if (role !== '1') {
+      navigate('/admin')
+    }
+  })
+
   const params = {
     queryDTO: {
       PageNumber: PageNumber,
@@ -37,7 +46,8 @@ export default function ShowAllProduct() {
       Object.entries(params.queryDTO).forEach(([key, value]) => {
         queryString.append(`queryDTO.${key}`, value)
       })
-      fetch(`https://localhost:7122/api/Product/GetPagedProducts?${queryString.toString()}`)
+      const url = createApi(`Product/GetPagedProducts?${queryString.toString()}`)
+      fetch(url)
         .then(response => response.json())
         // .then(response => response.json())
         .then(data => {
@@ -74,7 +84,7 @@ export default function ShowAllProduct() {
         marginRight: '10vw',
         marginTop: '2vh'
       }}>
-        <CreateProduct></CreateProduct>
+        <CreateProduct onProductCreated={() => setTriggerRead(prev => !prev)}></CreateProduct>
 
         <Button
           variant="contained"
@@ -136,7 +146,7 @@ export default function ShowAllProduct() {
                       </StyledTableCell>
                       <StyledTableCell>{item.name}</StyledTableCell>
                       <StyledTableCell><ButtonDeleteProduct id={item.id} isDeleted={item.isDeleted} /></StyledTableCell>
-                      <StyledTableCell><UpdateProduct item={item} image={item.images}></UpdateProduct></StyledTableCell>
+                      <StyledTableCell><UpdateProduct item={item} image={item.images} onProductUpdated={() => setTriggerRead(prev => !prev)}></UpdateProduct></StyledTableCell>
                       <StyledTableCell><ShowDetails id={item.id}></ShowDetails></StyledTableCell>
                     </TableRow>
                   </>

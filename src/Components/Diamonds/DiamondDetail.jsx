@@ -2,38 +2,34 @@ import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import { Container, Table, TableBody, TableCell, TableContainer, TableRow, Alert } from '@mui/material'
-import { Box, Modal, } from '@mui/material'
+import { Container, TableCell, Alert } from '@mui/material'
+import CheckIcon from '@mui/icons-material/Check';
+import { TextField } from '@mui/material'
+
 import { styled, } from '@mui/material'
 import Button from '@mui/material/Button'
-import CheckIcon from '@mui/icons-material/Check'
-import './ProductDetail.css';
-import { FormControl } from '@mui/material'
+
+import { FormControl, } from '@mui/material'
 import { createApi } from '../../Auth/AuthFunction'
-export default function ProductDetail() {
+export default function DiamondDetail() {
   // const navigate = useNavigate()
   const { id } = useParams()
-  const [openSize, setOpenSize] = useState(false)
-  const [productDetail, setProductDetail] = useState(null)
+  const [DiamondDetail, setDiamondDetail] = useState(null)
   const [currentTopImageIndex, setCurrentTopImageIndex] = useState(0)
-  const [selectedSize, setSelectedSize] = useState(1);
   const [selectedQuantity, setSelectedQuantity] = useState(1)
-  const [responseStatus, setResponseStatus] = useState(1)
-  const [totalPrice, setTotalPrice] = useState(0)
+  const [price, setPrice] = useState(0)
+  const [responseStatus, setResponseStatus] = useState('')
   const token = localStorage.getItem('token')
 
-  const handleOpen = () => setOpenSize(true)
-  const handleClose = () => setOpenSize(false)
 
   useEffect(() => {
-    const url = createApi(`Product/GetProductDetailById/${id}`)
+    const url = createApi(`Diamond/GetDiamondDetailById/${id}`)
     async function getDetailData() {
       try {
         const response = await fetch(url)
         const data = await response.json()
-        setProductDetail(data)
-        setSelectedSize(data?.productSizes?.[0]?.size)
-        setTotalPrice(data?.productSizes?.[0]?.price * selectedQuantity)
+        setDiamondDetail(data)
+        setPrice(data.price * selectedQuantity)
       } catch (error) {
         console.error(error)
       }
@@ -41,24 +37,23 @@ export default function ProductDetail() {
     getDetailData()
   }, [id])
 
-  const handleSelectSize = (size) => {
-    setSelectedSize(size)
+  const handleSelectQuantity = (quantity) => {
+    setSelectedQuantity(quantity)
   }
-
 
   const data = {
     id: id,
     quantity: selectedQuantity,
-    totalPrice: totalPrice,
+    price: price,
   }
 
   const submitForm = async (data) => {
     const body = {
       id: data.id,
       quantity: data.quantity,
-      totalPrice: data.totalPrice
+      totalPrice: data.price
     }
-    const url = createApi('Cart/Create?check=true')
+    const url = createApi('Cart/Create?check=false')
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -66,7 +61,7 @@ export default function ProductDetail() {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify(body),
-    });
+    })
     setResponseStatus(response.status)
   }
 
@@ -81,7 +76,7 @@ export default function ProductDetail() {
   const handleUp = () => {
     setCurrentTopImageIndex(prevIndex => {
       if (prevIndex === 0) {
-        return productDetail?.images.length - 4
+        return DiamondDetail?.images.length - 4
       } else {
         return Math.max(prevIndex - 1, 0)
       }
@@ -90,10 +85,10 @@ export default function ProductDetail() {
 
   const handleDown = () => {
     setCurrentTopImageIndex(prevIndex => {
-      if (prevIndex >= productDetail?.images.length - 4) {
+      if (prevIndex >= DiamondDetail?.images.length - 4) {
         return 0
       } else {
-        return Math.min(prevIndex + 1, productDetail?.images.length - 4)
+        return Math.min(prevIndex + 1, DiamondDetail?.images.length - 4)
       }
     })
   }
@@ -101,13 +96,23 @@ export default function ProductDetail() {
   const [imageMain, setImageMain] = useState(null)
 
   useEffect(() => {
-    setImageMain(productDetail?.images[0]?.urlPath)
-  }, [productDetail])
+    setImageMain(DiamondDetail?.images[0]?.urlPath)
+  }, [DiamondDetail])
 
   const handleImageSelect = (image) => {
     setImageMain(image.urlPath)
   }
 
+  const ITEM_HEIGHT = 120;
+  const ITEM_PADDING_TOP = 8;
+  const MenuProps = {
+    PaperProps: {
+      style: {
+        maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      },
+    },
+  }
+  // console.log(DiamondDetail)
   return (
     <div style={{
       background: 'url(https://img.freepik.com/free-vector/blue-white-crystal-textured-background_53876-85226.jpg?w=1380&t=st=1719599020~exp=1719599620~hmac=e182c45295cca98949de853e8f72341b687ed809b89663e38e1d78cbaec7314c)',
@@ -144,7 +149,7 @@ export default function ProductDetail() {
                 overflowX: 'auto',
                 maxWidth: '650px',
               }}>
-                {productDetail?.images.length > 4 && (
+                {DiamondDetail?.images.length > 4 && (
                   <Button onClick={handleUp}
                     sx={{
                       color: 'black',
@@ -154,7 +159,7 @@ export default function ProductDetail() {
                     <ChevronLeftIcon />
                   </Button>
                 )}
-                {productDetail?.images.slice(currentTopImageIndex, currentTopImageIndex + 4).map((image, index) => (
+                {DiamondDetail?.images.slice(currentTopImageIndex, currentTopImageIndex + 4).map((image, index) => (
                   <li style={{
                     listStyle: 'none',
                     '&:hover': {
@@ -176,7 +181,7 @@ export default function ProductDetail() {
                     }} onClick={() => handleImageSelect(image)} />
                   </li>
                 ))}
-                {productDetail?.images.length > 4 && (
+                {DiamondDetail?.images.length > 4 && (
                   <Button onClick={handleDown}
                     sx={{
                       color: 'black',
@@ -200,97 +205,41 @@ export default function ProductDetail() {
               alignItems: 'center',
               textAlign: 'center',
             }}>
-              <h1>{productDetail?.name}</h1>
-              <TableContainer sx={{
-                borderTop: '1px dashed black',
-                borderBottom: '1px dashed black',
-                width: 'auto',
-              }}>
-                <Table>
-                  <TableBody>
-                    {productDetail?.productParts.map((diamond, index) => (
-                      <TableRow key={index} >
-                        {diamond.isMain ? (
-                          <TableCell>
-                            <h4>Main Diamond: {diamond.diamond.name}</h4>
-                          </TableCell>
-                        ) : (
-                          <TableCell>
-                            <h4>Extra Diamond {diamond.diamond.name}</h4>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer><br />
+              <h1>{DiamondDetail?.name}</h1>
+              <TableCell>
+                <h5>Origin: {DiamondDetail?.origin}</h5>
+              </TableCell>
+              <TableCell>
+                <h5>Carat weight: {DiamondDetail?.caratWeight}</h5>
+              </TableCell>
+              <TableCell>
+                <h5>Clarity: {DiamondDetail?.clarity}</h5>
+              </TableCell>
+              <TableCell>
+                <h5>Color: {DiamondDetail?.color}</h5>
+              </TableCell>
+              <TableCell>
+                <h5>Cut: {DiamondDetail?.cut}</h5>
+              </TableCell>
+              <br />
 
               <FormControl sx={{
                 width: '300px',
               }}>
-                <div className='row'>
-                  <div>Size</div>
-                  <div className='col'>
-                    <div>
-                      {productDetail?.productSizes?.map((size, index) => (
-                        <Button
-                          key={index}
-                          variant="outlined"
-                          onClick={() => {
-                            handleSelectSize(size.size);
-                            const newPrice = size.price * selectedQuantity;
-                            setTotalPrice(newPrice);
-                          }}
-                          sx={{
-                            margin: '5px',
-                            color: selectedSize === size.size ? 'white' : 'black',
-                            backgroundColor: selectedSize === size.size ? '#ad2a36' : 'transparent',
-                            border: selectedSize === size.size ? '1px solid #ad2a36' : '1px solid black',
-                            height: '64px',
-                            borderRadius: '20px',
-                            '&:hover': {
-                              backgroundColor: '#ad2a36',
-                              color: 'white',
-                              border: '1px solid #ad2a36',
-                            }
-                          }}
-                        >
-                          {size.size}
-                        </Button>
-                      ))}
-                    </div> <br />
-                  </div>
-                </div>
-                <div>
-                  <div>
-                    <a onClick={handleOpen} style={{
-                      cursor: 'pointer',
-                      textDecoration: 'underline',
-                      fontSize: '20px',
-                    }}>How to Measure Ring Size</a>
-                  </div>
-                  <Modal
-                    open={openSize}
-                    onClose={handleClose}
-                    aria-labelledby="modal-modal-title"
-                    aria-describedby="modal-modal-description"
-                  >
-                    <Box sx={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      bgcolor: 'background.paper',
-                      p: 4,
-                      overflow: 'auto',
-                    }}>
-                      <img src="https://www.alexmakina.com/Data/EditorFiles/alex/Blog%20G%C3%B6rsel/Ring%20Size%20Measurement%20Using%20Thread%20or%20Floss.jpg" alt="" />
-                    </Box>
-                  </Modal>
-                </div>
-                <div>
-                  <h3 style={{ color: '#183471' }}>{totalPrice.toLocaleString()} $</h3>
-                </div>
+                <TextField
+                  label="Quantity"
+                  type="number" // Ensure input is treated as a number
+                  onChange={e => {
+                    const newQuantity = parseInt(e.target.value, 10); // Parse the quantity as an integer
+                    handleSelectQuantity(newQuantity);
+                    // Ensure we use the correct size to find the price
+                    const newPrice = DiamondDetail.price * newQuantity;
+                    setPrice(newPrice)
+                  }}
+                  value={selectedQuantity}
+                  inputProps={{ min: 1 }}
+                />
+                <h3 style={{ color: '#183471' }}>{price.toLocaleString()} $</h3>
                 {token ? (
                   <AddToCartButton
                     type='submit'
@@ -305,12 +254,12 @@ export default function ProductDetail() {
                     Please login to add to cart
                   </h4>
                 )}
-                {responseStatus.toString().startsWith('2') && (
-                  <Alert icon={<CheckIcon fontSize="inherit" />} severity="success">
-                    Add to cart successful
-                  </Alert>
-                )}
               </FormControl>
+              {responseStatus.toString().startsWith('2') && (
+                <Alert icon={<CheckIcon fontSize="inherit" />} severity="success">
+                  Add to cart successful
+                </Alert>
+              )}
             </div>
             <br />
           </div>
@@ -326,7 +275,7 @@ export default function ProductDetail() {
             <h2>Descriptions</h2>
             <p style={{
               textAlign: 'justify',
-              fontSize: '20px',
+              fontSize: '1vw',
             }}>
               Authentic with a special design combining two types of white gold and yellow gold, creating a strong, masculine and luxurious style.
               Exquisitely crafted to every detail and flexible according to needs: freely change the color/gold age and freely change the size of the main stone,
